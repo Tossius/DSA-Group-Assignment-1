@@ -401,6 +401,83 @@ service "CarRentalSystemService" on ep {
                 };
             }
         }
+
+   // List all cars (admin funtion)
+     remote function ListAllCars() returns RentalCar[] {
+    RentalCar[] allCars = [];
+    lock {
+        foreach RentalCar car in carDatabase {
+            allCars.push(car);
+        }
+    }
+    log:printInfo(string `Admin requested all cars: ${allCars.length()} cars`);
+    return allCars;
+            }
+
+         // List all reservations (admin funtion)
+remote function ListReservations() returns CarReservation[] {
+    CarReservation[] allReservations = [];
+    lock {
+        foreach CarReservation res in reservationDatabase {
+            allReservations.push(res);
+        }
+    }
+    log:printInfo(string `Admin requested all reservations: ${allReservations.length()} bookings`);
+    return allReservations;
+         }
+
+        // Cancel a reservation (admin function)
+      remote function CancelReservation(string reservationId) returns string {
+    lock {
+        if !reservationDatabase.hasKey(reservationId) {
+            return "Reservation not found!";
+        }
+        CarReservation res = reservationDatabase.get(reservationId);
+        if res.status != "CONFIRMED") {
+            return "Reservation is not active!";
+        }
+        
+        // Set reservation as canceled
+        res.status = "CANCELED";
+        reservationDatabase[reservationId] = res;
+        
+        // Make car available again
+        if carDatabase.hasKey(res.plate) {
+            RentalCar car = carDatabase.get(res.plate);
+            car.availability = CAR_AVAILABLE;
+            carDatabase[res.plate] = car;
+        }
+        
+        log:printInfo(string `Reservation ${reservationId} canceled by admin`);
+        return string `Reservation ${reservationId} canceled successfully.`;
+    }
+  }
+ 
+         // List all users (admin function))
+    remote function ListUsers() returns RentalUser[] {
+     RentalUser[] allUsers = [];
+     lock {
+        foreach RentalUser user in userDatabase {
+            allUsers.push(user);
+         }
+     }
+     log:printInfo(string `Admin requested all users: ${allUsers.length()} users`);
+      return allUsers;
+                 }
+
+        // View my reservations (customer function)
+ remote function ViewMyReservations(string customerId) returns CarReservation[] {
+    CarReservation[] myReservations = [];
+    lock {
+        foreach CarReservation res in reservationDatabase {
+            if res.customerID == customerId {
+                myReservations.push(res);
+             }
+         }
+     }
+    log:printInfo(string `Customer ${customerId} requested their reservations: ${myReservations.length()} bookings`);
+    return myReservations;
+     }     
         
         // Check cart
         lock {
