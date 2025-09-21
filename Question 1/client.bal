@@ -282,7 +282,6 @@ function AddTaskRequest() returns error? {
     io:println("");
 }
 
-// Fixed main function - removed unreachable code
 public function clientMain() returns error? {
     boolean cont = true;
 
