@@ -79,16 +79,26 @@ function interactiveSession() returns error? {
         io:println("2. List all available cars"); 
         io:println("3. Search for a car");
         io:println("4. Rent a car");
-        io:println("5. Exit");
+        io:println("5. List all cars"); // admin only
+        io:println("6. List all reservations"); // admin only
+        io:println("7. Cancel a reservation"); // admin only
+        io:println("8. List all users"); // admin only
+        io:println("9. View my reservations");  // customer
+        io:println("10. Exit");
         
-        string choice = io:readln("Your choice (1-5): ");
+        string choice = io:readln("Your choice (1-10): ");
         
         match choice.trim() {
             "1" => { check addNewCar(); }
             "2" => { check listCars(); }
             "3" => { check searchCar(); }  
             "4" => { check rentCar(); }
-            "5" => { 
+            "5" => { check listCars(); } 
+            "6" => { check ListAllCars(); }
+            "7" => { check CancelReservation(); }
+            "8" => { check ListAllUsers(); }
+            "9" => { check ViewMyReservations(); } 
+            "10" => { 
                 io:println("Thank you for using Car Rental System!");
                 running = false;
             }
@@ -200,7 +210,51 @@ function rentCar() returns error? {
     if endDate.trim() == "" {
         endDate = "2025-11-05";
     }
+   
+   //Listt all cars
+function listAllCarsClient() returns error? {
+    RentalCar[] cars = check ep->ListAllCars();
+    io:println("All cars in the system:");
+    foreach RentalCar car in cars {
+        io:println(string `- ${car.make} ${car.model} (${car.plate}) | Year: ${car.year} | Price: $${car.dailyPrice} | Status: ${car.availability}`);
+    }
+    } 
     
+    // list all reservations
+function listReservationsClient() returns error? {
+    CarReservation[] resList = check ep->ListReservations();
+    io:println("All reservations:");
+    foreach CarReservation res in resList {
+        io:println(string `- ID: ${res.reservationID} | Car: ${res.plate} | Customer: ${res.customerID} | Status: ${res.status}`);
+    }
+    }
+    
+    //cancel reservation
+function cancelReservationClient() returns error? {
+    string resId = io:readln("Enter Reservation ID to cancel: ");
+    string result = check ep->CancelReservation(resId.trim());
+    io:println(result);
+    }
+    
+    //list all users
+function listUsersClient() returns error? {
+    RentalUser[] users = check ep->ListUsers();
+    io:println("All users:");
+    foreach RentalUser u in users {
+        io:println(string `- ${u.userID}: ${u.name} (${u.email}) | Role: ${u.role}`);
+    }
+    } 
+
+    //view my reservations
+function viewMyReservationsClient() returns error? {
+    string custId = io:readln("Enter your Customer ID: ");
+    CarReservation[] myRes = check ep->ViewMyReservations(custId.trim());
+    io:println("Your reservations:");
+    foreach CarReservation res in myRes {
+        io:println(string `- ID: ${res.reservationID} | Car: ${res.plate} | Dates: ${res.start_date} to ${res.end_date} | Status: ${res.status}`);
+    }
+    }
+
     //Add Car to cart
     AddToCartRequest cartReq = {
         customerID: customerId.trim(),
